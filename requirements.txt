@@ -2,5 +2,7 @@ fastapi
 uvicorn
 vnstock==3.2.6
 pandas
+# uvicorn
 gunicorn  # <-- RẤT QUAN TRỌNG NẾU DÙNG GUNICORN TRONG CMD
 python-multipart
+pydantic
