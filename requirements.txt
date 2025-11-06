@@ -1,5 +1,6 @@
+fastapi
 uvicorn
 vnstock==3.2.6
-fastapi
 pandas
-# pip install -r requirements.txt
+gunicorn  # <-- RẤT QUAN TRỌNG NẾU DÙNG GUNICORN TRONG CMD
+python-multipart
