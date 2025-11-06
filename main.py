@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, HTTPException, Security
 from fastapi.security import APIKeyHeader
 from vnstock import Trading
