@@ -11,7 +11,7 @@ API_KEY_NAME = "X-Access-Token"
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=True)
 
 # 2. Token bí mật của bạn (RẤT QUAN TRỌNG: Hãy thay đổi và lưu trong biến môi trường khi deploy!)
-SECRET_TOKEN = "1324" # <-- THAY ĐỔI TOKEN NÀY!
+SECRET_TOKEN = os.environ.get("API_SECRET_TOKEN", "fallback_token") # Dùng dòng này
 
 # 3. Hàm Dependency kiểm tra Token
 async def get_api_key(api_key: str = Security(api_key_header)):
