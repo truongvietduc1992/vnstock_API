@@ -1,0 +1,5 @@
+uvicorn
+vnstock==3.2.6
+fastapi
+pandas
+# pip install -r requirements.txt
