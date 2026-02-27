@@ -100,7 +100,7 @@ def get_crypto_quotes(request: StockRequest, api_key: str = Security(get_api_key
 
     try:
         symbols_json = json.dumps(symbols_list).replace(" ", "") # Xoá khoảng trắng để Binance không báo lỗi
-        url = f"https://api.binance.com/api/v3/ticker/price?symbols={urllib.parse.quote(symbols_json)}"
+        url = f"https://data-api.binance.vision/api/v3/ticker/price?symbols={urllib.parse.quote(symbols_json)}"
 
         
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
