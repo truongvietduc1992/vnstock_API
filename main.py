@@ -67,13 +67,25 @@ async def get_combined_quotes(request: StockRequest, api_key: str = Security(get
                 new_cols.append(col_name)
             df.columns = new_cols
 
-        # Trích xuất các cột cần thiết
+        # Trích xuất các cột cần thiết (bao gồm khối lượng giao dịch)
         required_cols = ['symbol', 'ref_price', 'open_price']
+        optional_cols = [
+            'match_price',          # Giá khớp lệnh gần nhất
+            'match_vol',            # KL khớp lệnh gần nhất
+            'accumulated_volume',   # Tổng KL giao dịch trong phiên
+            'accumulated_value',    # Tổng giá trị giao dịch (triệu VND)
+            'highest',              # Giá cao nhất phiên
+            'lowest',               # Giá thấp nhất phiên
+            'foreign_buy_volume',   # KL mua của khối ngoại
+            'foreign_sell_volume',  # KL bán của khối ngoại
+        ]
         for col in required_cols:
             if col not in df.columns:
                 raise Exception(f"Thiếu cột {col} trong dữ liệu vnstock. Cột hiện có: {list(df.columns)}")
 
-        result_df = df[required_cols].copy()
+        # Thêm các cột tùy chọn nếu có
+        all_cols = required_cols + [c for c in optional_cols if c in df.columns]
+        result_df = df[all_cols].copy()
         result = result_df.to_dict('records')
         
         # Lưu cache
