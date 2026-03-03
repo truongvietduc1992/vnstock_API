@@ -17,6 +17,7 @@ api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=True)
 SECRET_TOKEN = os.environ.get("API_SECRET_TOKEN", "1324") 
 
 CACHE_TTL = 60 # Lưu kết quả 60 giây để tránh nghẽn CPU/RAM
+MAX_SYMBOLS = 30 # Giới hạn tối đa số mã mỗi request (bảo vệ RAM 512MB trên Koyeb Free)
 cache_quotes = {
     "stock": {},
     "crypto": {},
@@ -45,6 +46,8 @@ async def root():
 async def get_combined_quotes(request: StockRequest, api_key: str = Security(get_api_key)):
     if not request.symbols:
         raise HTTPException(status_code=400, detail="Vui lòng cung cấp ít nhất một mã cổ phiếu.")
+    if len(request.symbols) > MAX_SYMBOLS:
+        raise HTTPException(status_code=400, detail=f"Tối đa {MAX_SYMBOLS} mã mỗi request. Bạn gửi {len(request.symbols)} mã.")
     
     symbols_list = [s.strip().upper() for s in request.symbols if s.strip()]
     cache_key = ",".join(sorted(symbols_list))
@@ -100,6 +103,8 @@ async def get_combined_quotes(request: StockRequest, api_key: str = Security(get
 def get_crypto_quotes(request: StockRequest, api_key: str = Security(get_api_key)):
     if not request.symbols:
         raise HTTPException(status_code=400, detail="Vui lòng cung cấp ít nhất một mã crypto (VD: BTCUSDT).")
+    if len(request.symbols) > MAX_SYMBOLS:
+        raise HTTPException(status_code=400, detail=f"Tối đa {MAX_SYMBOLS} mã mỗi request. Bạn gửi {len(request.symbols)} mã.")
     
     symbols_list = [s.strip().upper() for s in request.symbols if s.strip()]
     cache_key = ",".join(sorted(symbols_list))
