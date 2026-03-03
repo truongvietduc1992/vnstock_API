@@ -1,63 +1,133 @@
 # VNStock API
-API được thiết kế để kết nối và lấy dữ liệu chứng khoán Việt Nam qua thư viện `vnstock` v0.1.5 và đóng gói gọn dưới dạng Fast API. Thích hợp cho việc deploy nhanh qua Docker hoặc các dịch vụ PsaS như Koyeb/Render, v.v.
+API được thiết kế để kết nối và lấy dữ liệu chứng khoán Việt Nam qua thư viện `vnstock` v0.1.5 và đóng gói gọn dưới dạng Fast API. Thích hợp cho việc deploy nhanh qua Docker hoặc các dịch vụ PaaS như Koyeb/Render, v.v.
 
 **Tính năng:**
-* Fetch giá tham chiếu (ref_price), giá mở cửa (open_price) của nhiều mã chứng khoán cùng lúc.
-* Lấy giá Crypto thông qua Binance API (Cập nhật real-time).
+* Fetch giá tham chiếu (ref_price), giá mở cửa (open_price), **khối lượng giao dịch** và nhiều chỉ số giao dịch khác của nhiều mã chứng khoán cùng lúc.
+* Lấy giá Crypto thông qua Binance Data API (Cập nhật real-time).
 * Lấy giá Vàng trong và ngoài nước qua cổng GiavangNOW.
 * Xác thực bằng **API Token Header**.
 * Tối ưu bộ nhớ Cache 60s phù hợp cài đặt trên các VPS Free/Eco cấu hình yếu (Tránh nghẽn CPU và tránh bị block IP API nguồn).
 
 ---
 
-## 1. Cài đặt môi trường Local và chạy thử (Run API Locally)
+## 1. Cài đặt môi trường Local và chạy thử
 
-Để test ở dưới máy, mở Terminal / CMD và cài đặt môi trường. (Yêu cầu sẵn Python 3.10+):
+Yêu cầu: Python 3.10+
 
-1. Clone project: `git clone <your_github_repo_link>`
-2. Cài đặt các thư viện yêu cầu: `pip install -r requirements.txt` (Nếu dùng máy cấu hình mạnh, có thể dùng `uvicorn main:app --reload` để chạy).
-3. Thêm token tạm vào biến môi trường (Ví dụ: 1324) 
-    * Windows: `set API_SECRET_TOKEN=1324`
-    * Linux/Mac: `export API_SECRET_TOKEN=1324`
-4. Khởi động server (Mặc định ở `http://localhost:8000`):
-    `python -m uvicorn main:app --host 0.0.0.0 --port 8000`
+```bash
+git clone <your_github_repo_link>
+cd vnstock_API
+pip install -r requirements.txt
+```
+
+Thêm token vào biến môi trường (tuỳ chọn):
+* Windows: `set API_SECRET_TOKEN=your_secret_token`
+* Linux/Mac: `export API_SECRET_TOKEN=your_secret_token`
+
+Khởi động server (Mặc định ở `http://localhost:8000`):
+```bash
+uvicorn main:app --host 0.0.0.0 --port 8000
+```
 
 ---
 
 ## 2. Các Endpoint (API Docs)
 
-Lưu ý: Bạn phải truyền **Header** bắt buộc là `X-Access-Token` với Token bạn đã setup (Mặc định nếu chưa set biến môi trường là `1324`)
+> **Header bắt buộc:** `X-Access-Token: <your_token>` (Mặc định: `1324`)
 
 ### A. Lấy giá Chứng Khoán VN
-* Cú pháp: `POST /stocks/quotes`
-* Body json: 
+* **Endpoint:** `POST /stocks/quotes`
+* **Body:**
 ```json
 {
   "symbols": ["FPT", "TCB"]
 }
 ```
+* **Response mẫu:**
+```json
+[
+  {
+    "symbol": "FPT",
+    "ref_price": 89600,
+    "open_price": 90100,
+    "match_price": 87400,
+    "match_vol": 500,
+    "accumulated_volume": 12281400,
+    "accumulated_value": 1090594.1,
+    "highest": 90900,
+    "lowest": 87200,
+    "foreign_buy_volume": 677585,
+    "foreign_sell_volume": 1544060
+  }
+]
+```
 
-### B. Lấy giá Hình thái Crypto (Tiền Mã Hóa) 
-* Cú pháp: `POST /crypto/quotes`
-* Body json: 
+**Giải thích các trường dữ liệu:**
+
+| Trường               | Ý nghĩa                                     |
+|----------------------|----------------------------------------------|
+| `symbol`             | Mã cổ phiếu                                 |
+| `ref_price`          | Giá tham chiếu                               |
+| `open_price`         | Giá mở cửa                                  |
+| `match_price`        | Giá khớp lệnh gần nhất                      |
+| `match_vol`          | Khối lượng khớp lệnh gần nhất               |
+| `accumulated_volume` | **Tổng khối lượng giao dịch trong phiên**    |
+| `accumulated_value`  | Tổng giá trị giao dịch (triệu VND)          |
+| `highest`            | Giá cao nhất phiên                           |
+| `lowest`             | Giá thấp nhất phiên                          |
+| `foreign_buy_volume` | Khối lượng mua của khối ngoại                |
+| `foreign_sell_volume`| Khối lượng bán của khối ngoại                |
+
+### B. Lấy giá Crypto (Tiền Mã Hóa)
+* **Endpoint:** `POST /crypto/quotes`
+* **Body:**
 ```json
 {
   "symbols": ["BTCUSDT", "ETHUSDT"]
 }
 ```
+* **Response mẫu:**
+```json
+[
+  {
+    "symbol": "BTCUSDT",
+    "ref_price": 66744.45,
+    "open_price": 66744.45
+  }
+]
+```
 
 ### C. Lấy giá Vàng
-* Cú pháp: `GET /gold/quotes`
-* Trả về kết quả JSON với Data Vàng thế giới, Vàng 9999, DOJI,...
+* **Endpoint:** `GET /gold/quotes`
+* **Response mẫu:**
+```json
+[
+  {
+    "symbol": "XAUUSD",
+    "name": "World Gold (XAU/USD)",
+    "buy_price": 5312.3,
+    "sell_price": 0,
+    "currency": "USD"
+  },
+  {
+    "symbol": "DOJINHTV",
+    "name": "DOJI Jewelry",
+    "buy_price": 185200000,
+    "sell_price": 188200000,
+    "currency": "VND"
+  }
+]
+```
 
 ---
 
-## 3. Deployment (Deploy app lên Koyeb / Render)
+## 3. Deployment (Deploy lên Koyeb / Render)
 
-Dự án này đã có đủ File `Dockerfile` cấu hình cực mịn theo chuẩn. Bạn chỉ cần:
+Dự án đã có sẵn `Dockerfile` chuẩn. Các bước:
 1. Đăng ký/đăng nhập Koyeb hoặc Render
-2. Tạo Service -> Kết nối tới tài khoản Github -> Chọn Repositories này.
-3. Ở cấu hình Environment Variables của máy ảo Koyeb:
-   -> Thêm Biến: KEY là `API_SECRET_TOKEN`, VALUE là `Mật_khẩu_bí_mật_của_bạn_tuỳ_thích`
-   *Chú ý: Đừng để trống biến này để không ai truy cập vào phá API của bạn.*
-4. Bấm `Deploy` và tận hưởng!
+2. Tạo Service -> Kết nối tới GitHub -> Chọn Repository này
+3. Cấu hình Environment Variables:
+   - `API_SECRET_TOKEN` = `Mật_khẩu_bí_mật_của_bạn`
+4. Bấm **Deploy** và tận hưởng!
+
+> ⚠️ **Lưu ý:** Đừng để trống biến `API_SECRET_TOKEN` để bảo vệ API khỏi truy cập trái phép.
